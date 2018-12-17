@@ -1,0 +1,104 @@
+---
+
+- hosts: server
+  gather_facts: true
+  become: yes
+  become_method: sudo
+  vars:
+    home: "{{home_path.stdout}}"
+
+
+  pre_tasks:
+    - name: "FIX: Ubuntu 16.04 LTS"
+      raw: apt-get install python-minimal aptitude -y
+      when: ( ansible_distribution == "Ubuntu" and ansible_distribution_version == "16.04") or ( ansible_distribution == "Debian" and ansible_distribution_major_version == "9")
+
+  tasks:
+
+    - debug:
+       msg: "I am connecting to {{ ansible_host }} which is running {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: get home path
+      become_user: "{{ ansible_user }}"
+      shell: "echo $HOME"
+      register: home_path
+
+    - name: Create nginx folder
+      file:
+        path: "{{home}}/nginx/letsencryptsite"
+        state: directory
+        recurse: yes
+
+    - name: copy nginx-compose file
+      template:
+        src: "./nginx-certificate/nginx-compose.yml.j2"
+        dest: "{{home}}/nginx/nginx-compose.yml"
+
+    - name: copy nginx config file
+      template:
+        src: "./nginx-certificate/nginxgetcertificat.conf.j2"
+        dest: "{{home}}/nginx/nginxgetcertificat.conf"
+
+    - name:  copy index.html file
+      template:
+        src: "./nginx-certificate/index.html.j2"
+        dest: "{{home}}/nginx/letsencryptsite/index.html"
+
+    - name: Create nginx docker container needed for certificate generation
+      shell: >
+        docker-compose -f "{{home}}/nginx"/nginx-compose.yml up -d nginx-initial-letsencrypt
+
+    - name: wait 15 seconds until the container that needed to generate certificate launch
+      pause:
+        seconds: 15
+
+    - name: Generate ssl certificate for the website domain
+      shell: >
+        docker run -it --rm
+        -v "{{home}}"/nginxcertificate/etc/letsencrypt:/etc/letsencrypt
+        -v "{{home}}"/nginxcertificate/var/lib/letsencrypt:/var/lib/letsencrypt
+        -v "{{home}}"/nginx/letsencryptsite:/data/letsencrypt
+        -v "{{home}}"/nginxcertificate/var/log/letsencrypt:/var/log/letsencrypt
+        certbot/certbot
+        certonly --webroot
+        --register-unsafely-without-email --agree-tos \
+        --webroot-path=/data/letsencrypt \
+        --staging \
+        -d {{ git_domain }}
+
+    - name: Remove container that generated certificate
+      shell: >
+        docker-compose -f "{{home}}/nginx"/nginx-compose.yml down
+    
+    - name: create dh-param directory
+      file:
+        path: "{{home}}/dh-param"
+        state: directory
+
+    - name: generate dh param file
+      shell: >
+        openssl dhparam -out {{home}}/dh-param/dhparam-2048.pem 2048
+
+    - name: create nginx-production folder
+      file:
+        path: "{{home}}/nginx-production/site"
+        state: directory
+
+    - name: copy index file
+      template:
+        src: "./nginx-certificate/index.html.j2"
+        dest: "{{home}}/nginx-production/site/index.html"
+
+    - name: copy nginx configuration file
+      template:
+        src: "./nginx-production/production.conf.j2"
+        dest: "{{home}}/nginx-production/production.conf"
+
+    - name: copy nginx-production file
+      template:
+        src: "./nginx-production/production-compose.yml.j2"
+        dest: "{{home}}/nginx-production/production-compose.yml"
+        
+    - name: run reverse proxy 
+      shell: >
+        docker-compose -f "{{home}}/nginx-production"/production-compose.yml up -d

@@ -1,0 +1,11 @@
+version: '3.1'
+
+services:
+  nginx-initial-letsencrypt:
+    image: "tsouhaieb/nginx-sts"
+    ports:
+      - "80:80"
+    volumes:
+      - "./nginxgetcertificat.conf:/etc/nginx/conf/nginx.conf"
+      - "./letsencryptsite:/etc/nginx/html"
+
