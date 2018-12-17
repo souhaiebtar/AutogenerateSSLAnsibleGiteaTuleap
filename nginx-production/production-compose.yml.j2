@@ -11,8 +11,8 @@ services:
     volumes:
       - "{{home}}/nginx-production/production.conf:/etc/nginx/conf/nginx.conf"
       - "{{home}}/dh-param/dhparam-2048.pem:/etc/ssl/certs/dhparam-2048.pem"
-      - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{git_domain}}/fullchain.pem:/etc/letsencrypt/live/{{git_domain}}/fullchain.pem"
-      - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{git_domain}}/privkey.pem:/etc/letsencrypt/live/{{git_domain}}/privkey.pem"
+      - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{tuleap_domain}}/fullchain.pem:/etc/letsencrypt/live/{{tuleap_domain}}/fullchain.pem"
+      - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{tuleap_domain}}/privkey.pem:/etc/letsencrypt/live/{{tuleap_domain}}/privkey.pem"
       - "{{home}}/nginx-production/site:/data/letsencrypt"
     depends_on:
       - tuleap
@@ -21,6 +21,6 @@ services:
     image: enalean/tuleap-aio
     restart: unless-stopped
     environment:
-      - VIRTUAL_HOST={{ git_domain }}
+      - VIRTUAL_HOST={{ tuleap_domain }}
     volumes:
       - ./tuleap-data:/data

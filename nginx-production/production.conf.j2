@@ -8,7 +8,7 @@ http {
 server {
       listen 80;
 
-      server_name {{ git_domain }};
+      server_name {{ tuleap_domain }};
       location /status {
             stream_server_traffic_status_display;
             stream_server_traffic_status_display_format html;
@@ -27,10 +27,10 @@ server {
 
 server {
   listen 443 ssl http2;
-  server_name {{ git_domain }};
+  server_name {{ tuleap_domain }};
   server_tokens off;
-  ssl_certificate /etc/letsencrypt/live/{{ git_domain }}/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/{{ git_domain }}/privkey.pem;
+  ssl_certificate /etc/letsencrypt/live/{{ tuleap_domain }}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/{{ tuleap_domain }}/privkey.pem;
   ssl_buffer_size 8k;
   ssl_dhparam /etc/ssl/certs/dhparam-2048.pem;
   ssl_session_cache shared:SSL:1m;
