@@ -17,7 +17,10 @@
       - debug:
         msg: "I am connecting to {{ ansible_host }} which is running {{ ansible_distribution }} {{ ansible_distribution_version }}"
 
-
+      - name: get home path
+        become_user: "{{ ansible_user }}"
+        shell: "echo $HOME"
+        register: home_path
 
       - name: Create nginx folder
         file:
