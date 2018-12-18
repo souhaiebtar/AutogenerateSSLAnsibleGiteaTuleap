@@ -113,3 +113,14 @@
     - name: run reverse proxy 
       shell: >
         docker-compose -f "{{home}}/nginx-production"/production-compose.yml up -d
+
+    - name: wait 1 minutes until nginx production launch
+      pause:
+        minutes: 1
+    
+
+    - name: add cron job for certificate renewal
+      cron:
+        minute: "00"
+        hour: "23"
+        job: docker run --rm -it --name certbot -v "{{home}}/nginxcertificate/etc/letsencrypt:/etc/letsencrypt" -v "{{home}}/nginxcertificate/var/lib/letsencrypt:/var/lib/letsencrypt" -v "{{home}}/nginx-production/site:/data/letsencrypt" -v "{{home}}/nginxcertificate/var/log/letsencrypt:/var/log/letsencrypt" certbot/certbot renew --webroot -w /data/letsencrypt --quiet && docker kill --signal=HUP nginx-production_nginx-proxy_1
