@@ -7,7 +7,6 @@
   vars:
     home: "{{home_path.stdout}}"
 
-
   pre_tasks:
     - name: "FIX: Ubuntu 16.04 LTS"
       raw: apt-get install python-minimal aptitude -y
@@ -15,83 +14,78 @@
 
   tasks:
 
-    - debug:
-       msg: "I am connecting to {{ ansible_host }} which is running {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - debug:
+        msg: "I am connecting to {{ ansible_host }} which is running {{ ansible_distribution }} {{ ansible_distribution_version }}"
 
-    - name: get home path
-      become_user: "{{ ansible_user }}"
-      shell: "echo $HOME"
-      register: home_path
 
-    - name: Create nginx folder
-      file:
-        path: "{{home}}/nginx/letsencryptsite"
-        state: directory
-        recurse: yes
 
-    - name: copy nginx-compose file
-      template:
-        src: "./nginx-certificate/nginx-compose.yml.j2"
-        dest: "{{home}}/nginx/nginx-compose.yml"
+      - name: Create nginx folder
+        file:
+          path: "{{home}}/nginx/letsencryptsite"
+          state: directory
+          recurse: yes
 
-    - name: copy nginx config file
-      template:
-        src: "./nginx-certificate/nginxgetcertificat.conf.j2"
-        dest: "{{home}}/nginx/nginxgetcertificat.conf"
+      - name: copy nginx-compose file
+        template:
+          src: "./nginx-certificate/nginx-compose.yml.j2"
+          dest: "{{home}}/nginx/nginx-compose.yml"
 
-    - name:  copy index.html file
-      template:
-        src: "./nginx-certificate/index.html.j2"
-        dest: "{{home}}/nginx/letsencryptsite/index.html"
+      - name: copy nginx config file
+        template:
+          src: "./nginx-certificate/nginxgetcertificat.conf.j2"
+          dest: "{{home}}/nginx/nginxgetcertificat.conf"
 
-    - name: Create nginx docker container needed for certificate generation
-      shell: >
-        docker-compose -f "{{home}}/nginx"/nginx-compose.yml up -d nginx-initial-letsencrypt
+      - name:  copy index.html file
+        template:
+          src: "./nginx-certificate/index.html.j2"
+          dest: "{{home}}/nginx/letsencryptsite/index.html"
 
-    - name: wait 15 seconds until the container that needed to generate certificate launch
-      pause:
-        seconds: 15
+      - name: Create nginx docker container needed for certificate generation
+        shell: >
+          docker-compose -f "{{home}}/nginx"/nginx-compose.yml up -d nginx-initial-letsencrypt
 
-    - name: Generate ssl certificate for the git_domain
-      shell: >
-        docker run -it --rm
-        -v "{{home}}"/nginxcertificate/etc/letsencrypt:/etc/letsencrypt
-        -v "{{home}}"/nginxcertificate/var/lib/letsencrypt:/var/lib/letsencrypt
-        -v "{{home}}"/nginx/letsencryptsite:/data/letsencrypt
-        -v "{{home}}"/nginxcertificate/var/log/letsencrypt:/var/log/letsencrypt
-        certbot/certbot
-        certonly --webroot
-        --register-unsafely-without-email --agree-tos \
-        --webroot-path=/data/letsencrypt \
-        --staging \
-        -d {{ git_domain }}
+      - name: wait 15 seconds until the container that needed to generate certificate launch
+        pause:
+          seconds: 15
 
-    - name: Generate ssl certificate for the tuleap_domain
-      shell: >
-        docker run -it --rm
-        -v "{{home}}"/nginxcertificate/etc/letsencrypt:/etc/letsencrypt
-        -v "{{home}}"/nginxcertificate/var/lib/letsencrypt:/var/lib/letsencrypt
-        -v "{{home}}"/nginx/letsencryptsite:/data/letsencrypt
-        -v "{{home}}"/nginxcertificate/var/log/letsencrypt:/var/log/letsencrypt
-        certbot/certbot
-        certonly --webroot
-        --register-unsafely-without-email --agree-tos \
-        --webroot-path=/data/letsencrypt \
-        --staging \
-        -d {{ tuleap_domain }}
+      - name: Generate ssl certificate for the git_domain
+        shell: >
+          docker run -it --rm
+          -v "{{home}}"/nginxcertificate/etc/letsencrypt:/etc/letsencrypt
+          -v "{{home}}"/nginxcertificate/var/lib/letsencrypt:/var/lib/letsencrypt
+          -v "{{home}}"/nginx/letsencryptsite:/data/letsencrypt
+          -v "{{home}}"/nginxcertificate/var/log/letsencrypt:/var/log/letsencrypt
+          certbot/certbot
+          certonly --webroot
+          --email {{ email_for_certificat }} --agree-tos --no-eff-email
+          --webroot-path=/data/letsencrypt
+          -d {{ git_domain }}
 
-    - name: Remove container that generated certificate
-      shell: >
-        docker-compose -f "{{home}}/nginx"/nginx-compose.yml down
-    
-    - name: create dh-param directory
-      file:
-        path: "{{home}}/dh-param"
-        state: directory
+      - name: Generate ssl certificate for the tuleap_domain
+        shell: >
+          docker run -it --rm
+          -v "{{home}}"/nginxcertificate/etc/letsencrypt:/etc/letsencrypt
+          -v "{{home}}"/nginxcertificate/var/lib/letsencrypt:/var/lib/letsencrypt
+          -v "{{home}}"/nginx/letsencryptsite:/data/letsencrypt
+          -v "{{home}}"/nginxcertificate/var/log/letsencrypt:/var/log/letsencrypt
+          certbot/certbot
+          certonly --webroot
+          --email {{ email_for_certificat }} --agree-tos --no-eff-email
+          --webroot-path=/data/letsencrypt
+          -d {{ tuleap_domain }}
 
-    - name: generate dh param file
-      shell: >
-        openssl dhparam -out {{home}}/dh-param/dhparam-2048.pem 2048
+      - name: Remove container that generated certificate
+        shell: >
+          docker-compose -f "{{home}}/nginx"/nginx-compose.yml down
+      
+      - name: create dh-param directory
+        file:
+          path: "{{home}}/dh-param"
+          state: directory
+
+      - name: generate dh param file
+        shell: >
+          openssl dhparam -out {{home}}/dh-param/dhparam-2048.pem 2048
 
     - name: create nginx-production folder
       file:

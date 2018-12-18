@@ -13,9 +13,13 @@ services:
       - "{{home}}/dh-param/dhparam-2048.pem:/etc/ssl/certs/dhparam-2048.pem"
       - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{tuleap_domain}}/fullchain.pem:/etc/letsencrypt/live/{{tuleap_domain}}/fullchain.pem"
       - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{tuleap_domain}}/privkey.pem:/etc/letsencrypt/live/{{tuleap_domain}}/privkey.pem"
+      - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{git_domain}}/fullchain.pem:/etc/letsencrypt/live/{{git_domain}}/fullchain.pem"
+      - "{{home}}/nginxcertificate/etc/letsencrypt/live/{{git_domain}}/privkey.pem:/etc/letsencrypt/live/{{git_domain}}/privkey.pem"
       - "{{home}}/nginx-production/site:/data/letsencrypt"
+      
     depends_on:
       - tuleap
+      - gitea
 
   tuleap:
     image: enalean/tuleap-aio
@@ -24,3 +28,9 @@ services:
       - VIRTUAL_HOST={{ tuleap_domain }}
     volumes:
       - ./tuleap-data:/data
+
+  gitea:
+    image: gitea/gitea:latest
+    restart: unless-stopped
+    volumes:
+      - ./data:/data

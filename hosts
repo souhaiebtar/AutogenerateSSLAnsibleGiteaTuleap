@@ -1,4 +1,4 @@
-server ansible_host=199.247.10.115
+server ansible_host=151.80.32.104
 
 [server]
 server
@@ -8,8 +8,8 @@ ansible_connection=ssh
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 ansible_python_interpreter=/usr/bin/python3
 ansible_user=root
-git_domain=git.tsouhaiebrpi.space
-tuleap_domain=tuleap.tsouhaiebrpi.space
+git_domain=git.m2m-groupe.com
+tuleap_domain=tuleap.m2m-groupe.com
 email_for_certificat=tsouhaieb@gmail.com
-ansible_private_key_file=~/.ssh/vultr_rsa
+ansible_private_key_file=~/.ssh/m2m_rsa
 host_key_checking=False
