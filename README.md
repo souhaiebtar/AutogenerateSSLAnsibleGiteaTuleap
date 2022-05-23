@@ -6,3 +6,5 @@ ansible-playbook -i hosts playground.yml
 ```
 N.B:
 Normally you only need to change the contents of the host file
+
+for testing purposes
